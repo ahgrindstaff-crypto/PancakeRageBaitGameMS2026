@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pancake Master: Rage Edition</title>
+    <title>Mr. G's Ragemakin' Pancakes!</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -24,11 +24,23 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             text-align: center;
             width: 90%;
-            max-width: 500px;
+            max-width: 550px;
+        }
+
+        /* NEW: Game Title Styling */
+        h1 {
+            font-size: 2.2rem;
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            color: #ecf0f1;
+            text-shadow: 3px 3px 0px #e74c3c, -1px -1px 0px #c0392b;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transform: rotate(-2deg);
         }
 
         #score-board {
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: bold;
             margin-bottom: 1rem;
             color: #f1c40f;
@@ -136,12 +148,12 @@
             transform: none;
         }
 
-        /* NEW: Restart Button Styling */
         #restart-btn {
             background-color: #7f8c8d;
             color: white;
             padding: 10px 20px;
             font-size: 1rem;
+            margin-top: 10px;
         }
         
         #restart-btn:hover {
@@ -152,6 +164,8 @@
 <body>
 
     <div id="game-container">
+        <h1>Mr. G's Ragemakin' Pancakes!</h1>
+        
         <div id="score-board">Score: <span id="score">0</span></div>
         
         <div id="status-text" class="text-waiting">WAITING...</div>
@@ -202,7 +216,7 @@
         // Event Listeners
         pourBtn.addEventListener('click', startCooking);
         flipBtn.addEventListener('click', flipPancake);
-        restartBtn.addEventListener('click', resetGame); // NEW Listener
+        restartBtn.addEventListener('click', resetGame); 
 
         function startCooking() {
             if (isCooking) return;
@@ -270,7 +284,6 @@
             scoreEl.textContent = score;
             
             setTimeout(() => {
-                // Only clear the visual elements if a new pancake hasn't started yet
                 if (!isCooking) {
                     pancakeEl.style.display = 'none';
                     progressBarEl.style.width = '0%';
@@ -280,21 +293,16 @@
             }, 1200);
         }
 
-        // NEW: Reset Function
         function resetGame() {
-            // Stop any current cooking loop
             isCooking = false;
             cancelAnimationFrame(animationFrameId);
             
-            // Reset Score
             score = 0;
             scoreEl.textContent = score;
             
-            // Reset Buttons
             pourBtn.disabled = false;
             flipBtn.disabled = true;
             
-            // Reset Visuals
             pancakeEl.style.display = 'none';
             progressBarEl.style.width = '0%';
             statusTextEl.textContent = "WAITING...";
