@@ -34,13 +34,12 @@
             color: #f1c40f;
         }
 
-        /* NEW: Giant Status Text */
         #status-text {
             font-size: 3rem;
             font-weight: 900;
             letter-spacing: 3px;
             margin-bottom: 1rem;
-            height: 60px; /* Fixed height so layout doesn't jump */
+            height: 60px; 
             text-transform: uppercase;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         }
@@ -74,15 +73,12 @@
             height: 150px;
             border-radius: 50%;
             display: none;
-            /* Removed the transition so the color snaps instantly */
         }
 
-        /* Pancake States */
         .raw { background-color: #f5deb3; } 
         .golden { background-color: #d4af37; box-shadow: 0 0 25px #f1c40f; } 
         .burnt { background-color: #222222; }
 
-        /* Text States */
         .text-waiting { color: #bdc3c7; }
         .text-raw { color: #f5deb3; }
         .text-golden { color: #f1c40f; }
@@ -107,6 +103,7 @@
             display: flex;
             gap: 1rem;
             justify-content: center;
+            margin-bottom: 1rem;
         }
 
         button {
@@ -138,6 +135,18 @@
             cursor: not-allowed;
             transform: none;
         }
+
+        /* NEW: Restart Button Styling */
+        #restart-btn {
+            background-color: #7f8c8d;
+            color: white;
+            padding: 10px 20px;
+            font-size: 1rem;
+        }
+        
+        #restart-btn:hover {
+            background-color: #95a5a6;
+        }
     </style>
 </head>
 <body>
@@ -161,13 +170,14 @@
             <button id="pour-btn">Pour Batter</button>
             <button id="flip-btn" disabled>FLIP!</button>
         </div>
+        
+        <button id="restart-btn">Restart Game</button>
     </div>
 
     <script>
         // --- GAME VARIABLES ---
         const RAW_LIMIT_MS = 900;     
         const BURNT_LIMIT_MS = 1000;  
-        // Golden Window: 900ms to 1000ms
         
         const POINTS_WIN = 10;
         const POINTS_LOSE = -10;
@@ -187,9 +197,12 @@
         const progressBarEl = document.getElementById('progress-bar');
         const pourBtn = document.getElementById('pour-btn');
         const flipBtn = document.getElementById('flip-btn');
+        const restartBtn = document.getElementById('restart-btn');
 
+        // Event Listeners
         pourBtn.addEventListener('click', startCooking);
         flipBtn.addEventListener('click', flipPancake);
+        restartBtn.addEventListener('click', resetGame); // NEW Listener
 
         function startCooking() {
             if (isCooking) return;
@@ -199,7 +212,6 @@
             flipBtn.disabled = false;
             messageEl.textContent = "";
             
-            // Reset elements to RAW state
             pancakeEl.style.display = 'block';
             pancakeEl.className = 'raw';
             
@@ -218,11 +230,9 @@
 
             const elapsedTime = currentTime - startTime;
 
-            // Update Progress Bar
             let progressPct = (elapsedTime / BURNT_LIMIT_MS) * 100;
             progressBarEl.style.width = Math.min(progressPct, 100) + '%';
 
-            // State Machine Logic with synchronous text updates
             if (elapsedTime >= BURNT_LIMIT_MS && currentState !== "burnt") {
                 currentState = "burnt";
                 pancakeEl.className = 'burnt';
@@ -235,7 +245,6 @@
                 statusTextEl.className = 'text-golden';
             }
 
-            // Continue loop
             animationFrameId = requestAnimationFrame(gameLoop);
         }
 
@@ -247,7 +256,6 @@
             pourBtn.disabled = false;
             flipBtn.disabled = true;
 
-            // Evaluate Score
             if (currentState === "golden") {
                 score += POINTS_WIN;
                 showMessage("NICE REFLEXES! +10", "success");
@@ -261,13 +269,37 @@
 
             scoreEl.textContent = score;
             
-            // Reset text after a second so they can go again
             setTimeout(() => {
-                pancakeEl.style.display = 'none';
-                progressBarEl.style.width = '0%';
-                statusTextEl.textContent = "WAITING...";
-                statusTextEl.className = 'text-waiting';
+                // Only clear the visual elements if a new pancake hasn't started yet
+                if (!isCooking) {
+                    pancakeEl.style.display = 'none';
+                    progressBarEl.style.width = '0%';
+                    statusTextEl.textContent = "WAITING...";
+                    statusTextEl.className = 'text-waiting';
+                }
             }, 1200);
+        }
+
+        // NEW: Reset Function
+        function resetGame() {
+            // Stop any current cooking loop
+            isCooking = false;
+            cancelAnimationFrame(animationFrameId);
+            
+            // Reset Score
+            score = 0;
+            scoreEl.textContent = score;
+            
+            // Reset Buttons
+            pourBtn.disabled = false;
+            flipBtn.disabled = true;
+            
+            // Reset Visuals
+            pancakeEl.style.display = 'none';
+            progressBarEl.style.width = '0%';
+            statusTextEl.textContent = "WAITING...";
+            statusTextEl.className = 'text-waiting';
+            messageEl.textContent = "";
         }
 
         function showMessage(text, className) {
