@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pancake Master: Rage Edition</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #2c3e50;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        #game-container {
+            background-color: #34495e;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        #score-board {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #f1c40f;
+        }
+
+        #message {
+            height: 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .success { color: #2ecc71; }
+        .failure { color: #e74c3c; }
+
+        #griddle {
+            width: 100%;
+            height: 250px;
+            background-color: #1a1a1a;
+            border-radius: 50%;
+            border: 8px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        #pancake {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            display: none;
+            transition: background-color 0.1s ease;
+        }
+
+        /* Pancake States */
+        .raw { background-color: #f5deb3; } /* Wheat color */
+        .golden { background-color: #d4af37; box-shadow: 0 0 15px #d4af37; } 
+        .burnt { background-color: #333333; }
+
+        #progress-container {
+            width: 100%;
+            height: 20px;
+            background-color: #555;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        #progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: #ecf0f1;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.1s, filter 0.1s;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        #pour-btn {
+            background-color: #3498db;
+            color: white;
+        }
+
+        #flip-btn {
+            background-color: #e67e22;
+            color: white;
+        }
+        
+        button:disabled {
+            background-color: #7f8c8d;
+            cursor: not-allowed;
+            transform: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="score-board">Score: <span id="score">0</span></div>
+        <div id="message"></div>
+        
+        <div id="griddle">
+            <div id="pancake" class="raw"></div>
+        </div>
+
+        <div id="progress-container">
+            <div id="progress-bar"></div>
+        </div>
+
+        <div class="controls">
+            <button id="pour-btn">Pour Batter</button>
+            <button id="flip-btn" disabled>FLIP!</button>
+        </div>
+    </div>
+
+    <script>
+        // --- GAME VARIABLES (Tweak these for difficulty) ---
+        const RAW_LIMIT_MS = 900;     // Pancake stays raw until 900ms
+        const BURNT_LIMIT_MS = 1000;  // Pancake burns at 1000ms
+        // The Golden Window is exactly between 900ms and 1000ms (0.1 seconds!)
+        
+        const POINTS_WIN = 10;
+        const POINTS_LOSE = -10;
+        // ---------------------------------------------------
+
+        let score = 0;
+        let startTime = 0;
+        let animationFrameId;
+        let isCooking = false;
+        let currentState = "none";
+
+        // DOM Elements
+        const scoreEl = document.getElementById('score');
+        const messageEl = document.getElementById('message');
+        const pancakeEl = document.getElementById('pancake');
+        const progressBarEl = document.getElementById('progress-bar');
+        const pourBtn = document.getElementById('pour-btn');
+        const flipBtn = document.getElementById('flip-btn');
+
+        pourBtn.addEventListener('click', startCooking);
+        flipBtn.addEventListener('click', flipPancake);
+
+        function startCooking() {
+            if (isCooking) return;
+
+            isCooking = true;
+            pourBtn.disabled = true;
+            flipBtn.disabled = false;
+            messageEl.textContent = "";
+            
+            // Reset Pancake
+            pancakeEl.style.display = 'block';
+            pancakeEl.className = 'raw';
+            currentState = "raw";
+            progressBarEl.style.width = '0%';
+
+            startTime = performance.now();
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        function gameLoop(currentTime) {
+            if (!isCooking) return;
+
+            const elapsedTime = currentTime - startTime;
+
+            // Update Progress Bar (scales to the burnt limit)
+            let progressPct = (elapsedTime / BURNT_LIMIT_MS) * 100;
+            progressBarEl.style.width = Math.min(progressPct, 100) + '%';
+
+            // State Machine Logic
+            if (elapsedTime >= BURNT_LIMIT_MS && currentState !== "burnt") {
+                currentState = "burnt";
+                pancakeEl.className = 'burnt';
+            } else if (elapsedTime >= RAW_LIMIT_MS && elapsedTime < BURNT_LIMIT_MS && currentState !== "golden") {
+                currentState = "golden";
+                pancakeEl.className = 'golden';
+            }
+
+            // Continue loop if not flipped
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        function flipPancake() {
+            if (!isCooking) return;
+
+            isCooking = false;
+            cancelAnimationFrame(animationFrameId);
+            pourBtn.disabled = false;
+            flipBtn.disabled = true;
+
+            // Evaluate Score based on current state
+            if (currentState === "golden") {
+                score += POINTS_WIN;
+                showMessage("PERFECT FLIP! +10", "success");
+            } else if (currentState === "raw") {
+                score += POINTS_LOSE;
+                showMessage("EW, IT'S RAW! -10", "failure");
+            } else if (currentState === "burnt") {
+                score += POINTS_LOSE;
+                showMessage("BURNT TO A CRISP! -10", "failure");
+            }
+
+            scoreEl.textContent = score;
+            
+            // Briefly show the final state before clearing
+            setTimeout(() => {
+                pancakeEl.style.display = 'none';
+                progressBarEl.style.width = '0%';
+            }, 1000);
+        }
+
+        function showMessage(text, className) {
+            messageEl.textContent = text;
+            messageEl.className = className;
+        }
+    </script>
+</body>
+</html>
